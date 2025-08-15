@@ -5,7 +5,9 @@
 #include <tf2/LinearMath/Transform.h>
 #include <tf2/convert.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/transform_listener.h>
 
 // Gazebo Transport includes
 #include <gz/msgs.hh>
@@ -16,11 +18,15 @@ public:
   GazeboPoseToRosBridge() : Node("perfect_localization_node") {
     // Initialize TF broadcaster
     tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
+    // Initialize TF2
+    tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
     // Declare parameters
     this->declare_parameter("gz_topic", "/world/empty_world/pose/info");
-    this->declare_parameter("target_entity_name", "prius");
-    this->declare_parameter("parent_frame", "map");
+    this->declare_parameter("target_entity_name", "robot");
+    this->declare_parameter("parent_frame", "world");
+    this->declare_parameter("amcl_parent_frame", "map");
     this->declare_parameter("child_frame", "base_link");
     this->declare_parameter("publish_amcl_pose", true);
     this->declare_parameter("amcl_topic", "/amcl_pose");
@@ -39,6 +45,7 @@ public:
     gz_topic_ = this->get_parameter("gz_topic").as_string();
     target_entity_name_ = this->get_parameter("target_entity_name").as_string();
     parent_frame_ = this->get_parameter("parent_frame").as_string();
+    amcl_parent_frame_ = this->get_parameter("amcl_parent_frame").as_string();
     child_frame_ = this->get_parameter("child_frame").as_string();
     publish_amcl_ = this->get_parameter("publish_amcl_pose").as_bool();
     amcl_topic_ = this->get_parameter("amcl_topic").as_string();
@@ -155,7 +162,7 @@ private:
     }
   }
 
-  bool CheckEntityById(uint32_t id) {
+  bool CheckEntityById([[maybe_unused]] uint32_t id) {
     // You can maintain a mapping of entity IDs to names if needed
     // For now, just return false - implement this if you know the entity ID
     return false;
@@ -172,7 +179,7 @@ private:
 
     // Publish AMCL pose if enabled
     if (publish_amcl_) {
-      PublishAmclPose(pose, now);
+      PublishAmclPose();
     }
   }
 
@@ -218,45 +225,47 @@ private:
     }
   }
 
-  void PublishAmclPose(const gz::msgs::Pose &pose,
-                       const rclcpp::Time &timestamp) {
+  void PublishAmclPose() {
     try {
-      // Convert Gazebo pose to tf2::Transform
-      tf2::Vector3 gazebo_translation(pose.position().x(), pose.position().y(),
-                                      pose.position().z());
-      tf2::Quaternion gazebo_rotation(
-          pose.orientation().x(), pose.orientation().y(),
-          pose.orientation().z(), pose.orientation().w());
-      tf2::Transform gazebo_transform(gazebo_rotation, gazebo_translation);
+      // Lookup transform from map to base_link at specific time
+      geometry_msgs::msg::TransformStamped transform_stamped;
+      transform_stamped = tf_buffer_->lookupTransform(
+          amcl_parent_frame_, child_frame_, tf2::TimePointZero);
 
-      // Apply static transform
-      tf2::Transform corrected_transform = gazebo_transform * static_transform_;
-
+      // Create AMCL pose message
       auto amcl_pose =
           std::make_unique<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
       // Set header
-      amcl_pose->header.stamp = timestamp;
-      amcl_pose->header.frame_id = parent_frame_;
+      amcl_pose->header.stamp = get_clock()->now();
+      amcl_pose->header.frame_id = amcl_parent_frame_;
 
-      // Set corrected pose
-      tf2::Vector3 corrected_translation = corrected_transform.getOrigin();
-      amcl_pose->pose.pose.position.x = corrected_translation.x();
-      amcl_pose->pose.pose.position.y = corrected_translation.y();
-      amcl_pose->pose.pose.position.z = corrected_translation.z();
+      // Extract pose from transform
+      amcl_pose->pose.pose.position.x =
+          transform_stamped.transform.translation.x;
+      amcl_pose->pose.pose.position.y =
+          transform_stamped.transform.translation.y;
+      amcl_pose->pose.pose.position.z =
+          transform_stamped.transform.translation.z;
 
-      tf2::Quaternion corrected_rotation = corrected_transform.getRotation();
-      amcl_pose->pose.pose.orientation.x = corrected_rotation.x();
-      amcl_pose->pose.pose.orientation.y = corrected_rotation.y();
-      amcl_pose->pose.pose.orientation.z = corrected_rotation.z();
-      amcl_pose->pose.pose.orientation.w = corrected_rotation.w();
+      amcl_pose->pose.pose.orientation.x =
+          transform_stamped.transform.rotation.x;
+      amcl_pose->pose.pose.orientation.y =
+          transform_stamped.transform.rotation.y;
+      amcl_pose->pose.pose.orientation.z =
+          transform_stamped.transform.rotation.z;
+      amcl_pose->pose.pose.orientation.w =
+          transform_stamped.transform.rotation.w;
 
-      // Set covariance (low uncertainty since this is ground truth)
+      // Set covariance
       amcl_pose->pose.covariance = amcl_covariance_;
 
       // Publish the AMCL pose
       amcl_pose_pub_->publish(std::move(amcl_pose));
 
+    } catch (const tf2::TransformException &ex) {
+      RCLCPP_WARN(this->get_logger(), "Could not transform %s to %s: %s",
+                  child_frame_.c_str(), amcl_parent_frame_.c_str(), ex.what());
     } catch (const std::exception &e) {
       RCLCPP_ERROR(this->get_logger(), "Error publishing AMCL pose: %s",
                    e.what());
@@ -276,6 +285,7 @@ private:
   std::string gz_topic_;
   std::string target_entity_name_;
   std::string parent_frame_;
+  std::string amcl_parent_frame_;
   std::string child_frame_;
   std::string amcl_topic_;
   bool publish_amcl_;
@@ -286,6 +296,10 @@ private:
 
   // Static transform for frame correction (e.g., Prius frame to base_link)
   tf2::Transform static_transform_;
+
+  // TF2 components
+  std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 };
 
 int main(int argc, char *argv[]) {
