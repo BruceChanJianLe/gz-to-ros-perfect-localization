@@ -294,7 +294,7 @@ private:
   // AMCL covariance matrix (pre-computed for efficiency)
   std::array<double, 36> amcl_covariance_;
 
-  // Static transform for frame correction (e.g., Prius frame to base_link)
+  // Static transform for frame correction (e.g., robot frame to base_link)
   tf2::Transform static_transform_;
 
   // TF2 components
