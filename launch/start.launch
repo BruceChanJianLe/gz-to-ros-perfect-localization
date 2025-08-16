@@ -83,34 +83,34 @@ def generate_launch_description():
                 description="Static transform yaw (radians)",
             ),
 
-            # Static Transform Arguments (map -> world)
+            # Map to World Static Transform Arguments (map -> world)
             DeclareLaunchArgument(
-                "static_tf_x",
+                "map_to_world_x",
                 default_value="0.0",
                 description="Map to world X translation",
             ),
             DeclareLaunchArgument(
-                "static_tf_y",
+                "map_to_world_y",
                 default_value="0.0",
                 description="Map to world Y translation",
             ),
             DeclareLaunchArgument(
-                "static_tf_z",
+                "map_to_world_z",
                 default_value="0.0",
                 description="Map to world Z translation",
             ),
             DeclareLaunchArgument(
-                "static_tf_roll",
+                "map_to_world_roll",
                 default_value="0.0",
                 description="Map to world roll rotation (radians)",
             ),
             DeclareLaunchArgument(
-                "static_tf_pitch",
+                "map_to_world_pitch",
                 default_value="0.0",
                 description="Map to world pitch rotation (radians)",
             ),
             DeclareLaunchArgument(
-                "static_tf_yaw",
+                "map_to_world_yaw",
                 default_value="0.0",
                 description="Map to world yaw rotation (radians)",
             ),
@@ -122,12 +122,12 @@ def generate_launch_description():
                 name="map_world_static_tf",
                 output="screen",
                 arguments=[
-                    LaunchConfiguration("static_tf_x"),
-                    LaunchConfiguration("static_tf_y"),
-                    LaunchConfiguration("static_tf_z"),
-                    LaunchConfiguration("static_tf_roll"),
-                    LaunchConfiguration("static_tf_pitch"),
-                    LaunchConfiguration("static_tf_yaw"),
+                    LaunchConfiguration("map_to_world_x"),
+                    LaunchConfiguration("map_to_world_y"),
+                    LaunchConfiguration("map_to_world_z"),
+                    LaunchConfiguration("map_to_world_roll"),
+                    LaunchConfiguration("map_to_world_pitch"),
+                    LaunchConfiguration("map_to_world_yaw"),
                     "map",
                     "world",
                 ],
