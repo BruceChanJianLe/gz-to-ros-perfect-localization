@@ -2,8 +2,10 @@
 
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+from launch_ros.substitutions import FindPackageShare
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 
 def generate_launch_description():
@@ -83,54 +85,19 @@ def generate_launch_description():
                 description="Static transform yaw (radians)",
             ),
 
-            # Map to World Static Transform Arguments (map -> world)
-            DeclareLaunchArgument(
-                "map_to_world_x",
-                default_value="0.0",
-                description="Map to world X translation",
-            ),
-            DeclareLaunchArgument(
-                "map_to_world_y",
-                default_value="0.0",
-                description="Map to world Y translation",
-            ),
-            DeclareLaunchArgument(
-                "map_to_world_z",
-                default_value="0.0",
-                description="Map to world Z translation",
-            ),
-            DeclareLaunchArgument(
-                "map_to_world_roll",
-                default_value="0.0",
-                description="Map to world roll rotation (radians)",
-            ),
-            DeclareLaunchArgument(
-                "map_to_world_pitch",
-                default_value="0.0",
-                description="Map to world pitch rotation (radians)",
-            ),
-            DeclareLaunchArgument(
-                "map_to_world_yaw",
-                default_value="0.0",
-                description="Map to world yaw rotation (radians)",
-            ),
-
-            # Static transform publisher (map -> world)
-            Node(
-                package="tf2_ros",
-                executable="static_transform_publisher",
-                name="map_world_static_tf",
-                output="screen",
-                arguments=[
-                    LaunchConfiguration("map_to_world_x"),
-                    LaunchConfiguration("map_to_world_y"),
-                    LaunchConfiguration("map_to_world_z"),
-                    LaunchConfiguration("map_to_world_roll"),
-                    LaunchConfiguration("map_to_world_pitch"),
-                    LaunchConfiguration("map_to_world_yaw"),
-                    "map",
-                    "world",
-                ],
+            # Include map to world launch file
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    [
+                        PathJoinSubstitution(
+                            [
+                                FindPackageShare("gz-to-ros-perfect-localization"),
+                                "launch",
+                                "map_to_world.launch.py",
+                            ]
+                        )
+                    ]
+                ),
             ),
 
             # Launch the bridge node
