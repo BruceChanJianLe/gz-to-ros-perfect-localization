@@ -70,26 +70,32 @@ namespace rviz_panel {
 
     void PerfectLocalizationTFCalibrator::on_staticTransformXSpinBox_editingFinished() {
       node_->setStaticTransformX(ui_->staticTransformXSpinBox->text().toDouble());
+      node_->updateStaticTransform();
     }
 
     void PerfectLocalizationTFCalibrator::on_staticTransformYSpinBox_editingFinished() {
       node_->setStaticTransformY(ui_->staticTransformYSpinBox->text().toDouble());
+      node_->updateStaticTransform();
     }
 
     void PerfectLocalizationTFCalibrator::on_staticTransformZSpinBox_editingFinished() {
       node_->setStaticTransformZ(ui_->staticTransformZSpinBox->text().toDouble());
+      node_->updateStaticTransform();
     }
 
     void PerfectLocalizationTFCalibrator::on_staticTransformRollSpinBox_editingFinished() {
       node_->setStaticTransformRoll(ui_->staticTransformRollSpinBox->text().toDouble());
+      node_->updateStaticTransform();
     }
 
     void PerfectLocalizationTFCalibrator::on_staticTransformPitchSpinBox_editingFinished() {
       node_->setStaticTransformPitch(ui_->staticTransformPitchSpinBox->text().toDouble());
+      node_->updateStaticTransform();
     }
 
     void PerfectLocalizationTFCalibrator::on_staticTransformYawSpinBox_editingFinished() {
       node_->setStaticTransformYaw(ui_->staticTransformYawSpinBox->text().toDouble());
+      node_->updateStaticTransform();
     }
 
     void PerfectLocalizationTFCalibrator::on_parentFrameLineEdit_editingFinished() {
@@ -101,11 +107,11 @@ namespace rviz_panel {
     }
 
     void PerfectLocalizationTFCalibrator::on_gazeboTopicLineEdit_editingFinished() {
-      ;
+      node_->setGZTopic(ui_->gazeboTopicLineEdit->text().toStdString());
     }
 
     void PerfectLocalizationTFCalibrator::on_entityNameLineEdit_editingFinished() {
-      ;
+      node_->setTargetEntity(ui_->entityNameLineEdit->text().toStdString());
     }
 } // rviz_panel
 
