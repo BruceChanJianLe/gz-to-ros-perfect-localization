@@ -1,3 +1,4 @@
+#include "gz-to-ros-perfect-localization/perfect_localization.hpp"
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -13,9 +14,8 @@
 #include <gz/msgs.hh>
 #include <gz/transport.hh>
 
-class GazeboPoseToRosBridge : public rclcpp::Node {
-public:
-  GazeboPoseToRosBridge() : Node("perfect_localization_node") {
+namespace utils {
+  GazeboPoseToRosBridge::GazeboPoseToRosBridge() : Node("perfect_localization_node") {
     // Initialize TF broadcaster
     tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
     // Initialize TF2
@@ -52,21 +52,15 @@ public:
     publish_tf_ = this->get_parameter("publish_tf").as_bool();
 
     // Get static transform parameters
-    double static_x = this->get_parameter("static_transform_x").as_double();
-    double static_y = this->get_parameter("static_transform_y").as_double();
-    double static_z = this->get_parameter("static_transform_z").as_double();
-    double static_roll =
-        this->get_parameter("static_transform_roll").as_double();
-    double static_pitch =
-        this->get_parameter("static_transform_pitch").as_double();
-    double static_yaw = this->get_parameter("static_transform_yaw").as_double();
+    setStaticTransformX(get_parameter("static_transform_x").as_double());
+    setStaticTransformY(get_parameter("static_transform_y").as_double());
+    setStaticTransformZ(get_parameter("static_transform_z").as_double());
+    setStaticTransformRoll(get_parameter("static_transform_roll").as_double());
+    setStaticTransformPitch(get_parameter("static_transform_pitch").as_double());
+    setStaticTransformYaw(get_parameter("static_transform_yaw").as_double());
 
-    // Create static transform
-    tf2::Vector3 static_translation(static_x, static_y, static_z);
-    tf2::Quaternion static_rotation;
-    static_rotation.setRPY(static_roll, static_pitch, static_yaw);
-    static_transform_.setOrigin(static_translation);
-    static_transform_.setRotation(static_rotation);
+    // Set static transformation
+    updateStaticTransform();
 
     // Initialize AMCL pose publisher if needed
     if (publish_amcl_) {
@@ -117,8 +111,10 @@ public:
     amcl_covariance_[35] = 0.0003; // rot_z variance
   }
 
-private:
-  void OnPoseMsg(const gz::msgs::Pose_V &msg) {
+  GazeboPoseToRosBridge::~GazeboPoseToRosBridge(){}
+
+
+  void GazeboPoseToRosBridge::OnPoseMsg(const gz::msgs::Pose_V &msg) {
     try {
       // Search for our target entity in the pose vector
       for (const auto &pose : msg.pose()) {
@@ -162,13 +158,13 @@ private:
     }
   }
 
-  bool CheckEntityById([[maybe_unused]] uint32_t id) {
+  bool GazeboPoseToRosBridge::CheckEntityById([[maybe_unused]] uint32_t id) {
     // You can maintain a mapping of entity IDs to names if needed
     // For now, just return false - implement this if you know the entity ID
     return false;
   }
 
-  void ProcessPose(const gz::msgs::Pose &pose) {
+  void GazeboPoseToRosBridge::ProcessPose(const gz::msgs::Pose &pose) {
     // Get current time for stamping
     auto now = this->get_clock()->now();
 
@@ -183,7 +179,7 @@ private:
     }
   }
 
-  void PublishTfTransform(const gz::msgs::Pose &pose,
+  void GazeboPoseToRosBridge::PublishTfTransform(const gz::msgs::Pose &pose,
                           const rclcpp::Time &timestamp) {
     try {
       // Convert Gazebo pose to tf2::Transform
@@ -225,7 +221,7 @@ private:
     }
   }
 
-  void PublishAmclPose() {
+  void GazeboPoseToRosBridge::PublishAmclPose() {
     try {
       // Lookup transform from map to base_link at specific time
       geometry_msgs::msg::TransformStamped transform_stamped;
@@ -272,46 +268,13 @@ private:
     }
   }
 
-private:
-  // Gazebo Transport
-  gz::transport::Node gz_node_;
+  void GazeboPoseToRosBridge::updateStaticTransform() {
+    // Create static transform
+    tf2::Vector3 static_translation(static_x_, static_y_, static_z_);
+    tf2::Quaternion static_rotation;
 
-  // ROS 2 publishers and broadcasters
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
-  rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
-      amcl_pose_pub_;
-
-  // Parameters
-  std::string gz_topic_;
-  std::string target_entity_name_;
-  std::string parent_frame_;
-  std::string amcl_parent_frame_;
-  std::string child_frame_;
-  std::string amcl_topic_;
-  bool publish_amcl_;
-  bool publish_tf_;
-
-  // AMCL covariance matrix (pre-computed for efficiency)
-  std::array<double, 36> amcl_covariance_;
-
-  // Static transform for frame correction (e.g., robot frame to base_link)
-  tf2::Transform static_transform_;
-
-  // TF2 components
-  std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-};
-
-int main(int argc, char *argv[]) {
-  rclcpp::init(argc, argv);
-
-  try {
-    auto node = std::make_shared<GazeboPoseToRosBridge>();
-    rclcpp::spin(node);
-  } catch (const std::exception &e) {
-    RCLCPP_ERROR(rclcpp::get_logger("main"), "Error: %s", e.what());
+    static_rotation.setRPY(static_roll_, static_pitch_, static_yaw_);
+    static_transform_.setOrigin(static_translation);
+    static_transform_.setRotation(static_rotation);
   }
-
-  rclcpp::shutdown();
-  return 0;
-}
+} // utils
