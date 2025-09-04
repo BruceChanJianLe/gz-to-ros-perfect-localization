@@ -20,12 +20,12 @@
 #include "ui_panel.h"
 
 namespace rviz_panel {
-  class TFCalibrator : public rviz_common::Panel
+  class PerfectLocalizationTFCalibrator : public rviz_common::Panel
   {
     Q_OBJECT
   public:
-    explicit TFCalibrator(QWidget *parent = nullptr);
-    ~TFCalibrator();
+    explicit PerfectLocalizationTFCalibrator(QWidget *parent = nullptr);
+    ~PerfectLocalizationTFCalibrator();
 
     /// Load and save configuration data
     virtual void load(const rviz_common::Config &config) override;
