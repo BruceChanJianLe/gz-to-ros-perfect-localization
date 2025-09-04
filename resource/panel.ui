@@ -19,38 +19,10 @@
      <x>190</x>
      <y>10</y>
      <width>211</width>
-     <height>220</height>
+     <height>228</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_3">
-    <item>
-     <widget class="QLabel" name="parentFrameLabel">
-      <property name="text">
-       <string>Parent Frame</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLineEdit" name="parentFrameLineEdit">
-      <property name="text">
-       <string>world</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="childFrameLabel">
-      <property name="text">
-       <string>Child Frame</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLineEdit" name="childFrameLineEdit">
-      <property name="text">
-       <string>base_link</string>
-      </property>
-     </widget>
-    </item>
     <item>
      <widget class="QLabel" name="gazeboTopicLabel">
       <property name="text">
@@ -109,6 +81,34 @@
       </property>
      </widget>
     </item>
+    <item>
+     <widget class="QLabel" name="parentFrameLabel">
+      <property name="text">
+       <string>Parent Frame</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLineEdit" name="parentFrameLineEdit">
+      <property name="text">
+       <string>world</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="childFrameLabel">
+      <property name="text">
+       <string>Child Frame</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLineEdit" name="childFrameLineEdit">
+      <property name="text">
+       <string>base_link</string>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QWidget" name="">
@@ -117,7 +117,7 @@
      <x>10</x>
      <y>10</y>
      <width>172</width>
-     <height>211</height>
+     <height>229</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_4">

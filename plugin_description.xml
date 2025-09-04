@@ -1,7 +1,7 @@
 <library path="perfect_localization_rviz_panel">
 
-  <class name="rviz_panel/TFCalibrator"
-         type="rviz_panel::TFCalibrator"
+  <class name="rviz_panel/PerfectLocalizationTFCalibrator"
+         type="rviz_panel::PerfectLocalizationTFCalibrator"
          base_class_type="rviz_common::Panel">
     <description>An RVIZ panel to calibrate perfect localization TF</description>
   </class>
